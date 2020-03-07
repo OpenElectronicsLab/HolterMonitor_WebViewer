@@ -29,6 +29,26 @@ http.createServer(function(req, res) {
     console.log(`In second server`);
 }).listen('8081', hostname);
 
+
+function testIndexPage(callback) {
+    const options = {
+        hostname: hostname,
+        port: port,
+        path: '/index.html',
+        method: 'GET'
+    }
+    const req = http.request(options, res => {
+        res.on('data', data => {
+            var pageString = data.toString();
+            assert(pageString.indexOf("Test page") !== -1);
+            assert(pageString.match(/Test page/));
+            callback();
+        })
+    })
+    req.end();
+}
+
+/*
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -57,6 +77,7 @@ function testFoo(callback) {
     assert(1 == 1);
     callback();
 }
+*/
 
 function runTests(tests) {
     assert(Array.isArray(tests));
@@ -86,7 +107,8 @@ function runTests(tests) {
 
 runTests(
     [
-        testFoo, testBaz, testBar
+        testIndexPage
+        /*        testFoo, testBaz, testBar */
     ]
 )
 
