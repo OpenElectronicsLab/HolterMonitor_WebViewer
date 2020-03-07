@@ -23,13 +23,6 @@ http.createServer(function(req, res) {
     console.log(`Node.js server is running on http://${hostname}:${port}/`);
 });
 
-http.createServer(function(req, res) {
-    res.writeHead(500);
-    res.end();
-    console.log(`In second server`);
-}).listen('8081', hostname);
-
-
 function testIndexPage(callback) {
     const options = {
         hostname: hostname,
@@ -47,37 +40,6 @@ function testIndexPage(callback) {
     })
     req.end();
 }
-
-/*
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function testBaz(nextTest) {
-    console.log("testBaz");
-    nextTest();
-}
-
-function myFunc(callback) {
-    console.log(`Halfway dead`);
-    callback();
-}
-
-function testBar(callback) {
-    console.log("testBar");
-    setInterval(
-        (function() {
-            myFunc(callback)
-        }),
-        testMaxMillis / 2);
-}
-
-function testFoo(callback) {
-    console.log("testFoo");
-    assert(1 == 1);
-    callback();
-}
-*/
 
 function runTests(tests) {
     assert(Array.isArray(tests));
@@ -107,8 +69,7 @@ function runTests(tests) {
 
 runTests(
     [
-        testIndexPage
-        /*        testFoo, testBaz, testBar */
+        testIndexPage,
     ]
 )
 
