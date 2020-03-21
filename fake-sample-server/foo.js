@@ -2,9 +2,8 @@
 
 var fs = require('fs'),
     http = require('http'),
-    assert = require('assert');
-
-const WebSocket = require('ws');
+    assert = require('assert'),
+    WebSocket = require('ws');
 
 const hostname = '127.0.0.1';
 const port = 8080;
@@ -51,8 +50,8 @@ server.listen(port, hostname, () => {
 function testSocketReceive(callback) {
     const ws = new WebSocket(`ws://${hostname}:${port}/foo`);
     ws.on('message', function incoming(data) {
-        console.log("In: testSocketReceive");
-        console.log(data);
+        var pageString = data.toString();
+        assert(pageString.indexOf("Hello world") !== -1);
         callback();
     });
 
@@ -91,6 +90,7 @@ function runTests(tests) {
         console.log('*** tests pass ***');
         process.exit(0);
     };
+
     while (tests.length) {
         let currentTest = tests.pop();
         let nextTest = theTest;
