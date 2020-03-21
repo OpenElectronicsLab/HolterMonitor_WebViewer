@@ -27,17 +27,26 @@ const wss1 = new WebSocket.Server({
     noServer: true
 });
 
+var receivers = new Set();
+
 server.on('upgrade', function upgrade(request, socket, head) {
     const pathname = request.url;
-    if (pathname === '/foo') {
+    if (pathname === '/sub') {
         wss1.handleUpgrade(request, socket, head, function done(ws) {
-            ws.send('Hello world')
-        });
-        /*  } else if (pathname === '/bar') {
-            wss2.handleUpgrade(request, socket, head, function done(ws) {
-              wss2.emit('connection', ws, request);
+            ws.send('Hello world');
+            receivers.add(ws);
+            ws.on('close', function clear() {
+                receivers.delete(ws);
             });
-        */
+        });
+    } else if (pathname == '/pub') {
+        wss1.handleUpgrade(request, socket, head, function done(ws) {
+            ws.on('message', function incoming(data) {
+                receivers.forEach((rws) => {
+                    rws.send(data);
+                });
+            });
+        });
     } else {
         socket.destroy();
     }
@@ -47,14 +56,46 @@ server.listen(port, hostname, () => {
     console.log(`Node.js server is running on http://${hostname}:${port}/`);
 });
 
+function assertContains(needle, haystack) {
+    if (haystack.indexOf(needle) == -1) {
+        console.error(`expected "${needle}" in "${haystack}"`);
+        assert(false);
+    }
+}
+
 function testSocketReceive(callback) {
-    const ws = new WebSocket(`ws://${hostname}:${port}/foo`);
+    const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
     ws.on('message', function incoming(data) {
         var pageString = data.toString();
         assert(pageString.indexOf("Hello world") !== -1);
+        ws.terminate();
         callback();
     });
+}
 
+function testEcho(callback) {
+    const wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
+    const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
+
+    var expected = [
+        "Hello world",
+        "one",
+        "two",
+    ];
+    var cnt = 0;
+
+    wssub.on('message', function incoming(data) {
+        var pageString = data.toString();
+        assertContains(expected[cnt], pageString);
+
+        cnt++;
+
+        if (cnt < expected.length) {
+            wspub.send(expected[cnt]);
+        } else {
+            callback();
+        }
+    });
 }
 
 
@@ -102,11 +143,11 @@ function runTests(tests) {
     theTest()
 }
 
-
 runTests(
     [
         testIndexPage,
         testSocketReceive,
+        testEcho,
     ]
 )
 
