@@ -3,59 +3,12 @@
 var fs = require('fs'),
     http = require('http'),
     assert = require('assert'),
-    WebSocket = require('ws');
+    WebSocket = require('ws'),
+    echoServer = require('./echo-server.js');
 
 const hostname = '127.0.0.1';
 const port = 8080;
 const testMaxMillis = (0.5 * 1000); // half second
-const echoServerConnectMessage = 'Hello world';
-
-const server = http.createServer(function(req, res) {
-    fs.readFile(__dirname + "/static/" + req.url, function(err, data) {
-        if (err) {
-            res.writeHead(404);
-            res.end(JSON.stringify(err));
-            return;
-        }
-        res.writeHead(200, {
-            'Content-Type': 'text/html'
-        });
-        res.end(data);
-    });
-});
-
-const wss1 = new WebSocket.Server({
-    noServer: true
-});
-
-var receivers = new Set();
-
-server.on('upgrade', function upgrade(request, socket, head) {
-    const pathname = request.url;
-    if (pathname === '/sub') {
-        wss1.handleUpgrade(request, socket, head, function done(ws) {
-            ws.send(echoServerConnectMessage);
-            receivers.add(ws);
-            ws.on('close', function clear() {
-                receivers.delete(ws);
-            });
-        });
-    } else if (pathname == '/pub') {
-        wss1.handleUpgrade(request, socket, head, function done(ws) {
-            ws.on('message', function incoming(data) {
-                receivers.forEach((rws) => {
-                    rws.send(data);
-                });
-            });
-        });
-    } else {
-        socket.destroy();
-    }
-});
-
-server.listen(port, hostname, () => {
-    console.log(`Node.js server is running on http://${hostname}:${port}/`);
-});
 
 function assertEquals(expected, actual) {
     if (expected !== actual) {
@@ -75,7 +28,7 @@ function testSocketReceive(callback) {
     const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
     ws.on('message', function incoming(data) {
         var pageString = data.toString();
-        assertContains(echoServerConnectMessage, pageString);
+        assertContains(echoServer.echoServerConnectMessage, pageString);
         ws.terminate();
         callback();
     });
@@ -86,7 +39,7 @@ function testEcho(callback) {
     const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
 
     var expected = [
-        echoServerConnectMessage,
+        echoServer.echoServerConnectMessage,
         "one",
         "two",
     ];
@@ -129,7 +82,7 @@ function testParallelReceive(callback) {
         for (i = 0; i < messagesBySocket.length; ++i) {
             var numMessagesExpected = expected.length + 1 - i;
             assertEquals(messagesBySocket[i].length, numMessagesExpected);
-            assertEquals(messagesBySocket[i][0], echoServerConnectMessage);
+            assertEquals(messagesBySocket[i][0], echoServer.echoServerConnectMessage);
             for (j = 1; j < numMessagesExpected; ++j) {
                 var expMsg = expected[j + i - 1];
                 assertEquals(messagesBySocket[i][j], expMsg);
@@ -150,7 +103,7 @@ function testParallelReceive(callback) {
             var pageString = data.toString();
             messageList.push(pageString);
 
-            if (pageString == echoServerConnectMessage) {
+            if (pageString == echoServer.echoServerConnectMessage) {
                 return;
             }
 
@@ -225,6 +178,9 @@ function runTests(tests) {
     }
     theTest();
 }
+
+
+echoServer.createEchoServer(hostname, port);
 
 runTests(
     [
