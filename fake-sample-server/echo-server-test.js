@@ -36,10 +36,12 @@ function testSocketReceive(callback) {
     });
 }
 
+// this test is fragile and prone to failure due to race conditions
 function testEcho(callback) {
     const server = echoServer.createEchoServer(hostname, port);
-    const wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
+    // the order of creation of wspub and wssub is significant
     const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
+    const wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
 
     var expected = [
         echoServer.echoServerConnectMessage,
