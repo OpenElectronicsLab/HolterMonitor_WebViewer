@@ -1,0 +1,13 @@
+{
+  "name": "fake-sample-server",
+  "version": "0.0.1",
+  "description": "Test server for OpenHardwareHolterMonitor",
+  "main": "echo-server-test.js",
+  "scripts": {
+    "start": "node echo-server-test.js"
+  },
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "ws": "^1.1"
+  }
+}
