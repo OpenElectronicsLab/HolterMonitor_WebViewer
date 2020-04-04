@@ -32,11 +32,11 @@ function createEchoServer(hostname, port) {
         const pathname = request.url;
         if (pathname === '/sub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
-                ws.send(echoServerConnectMessage);
                 receivers.add(ws);
                 ws.on('close', function clear() {
                     receivers.delete(ws);
                 });
+                ws.send(echoServerConnectMessage);
             });
         } else if (pathname == '/pub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
