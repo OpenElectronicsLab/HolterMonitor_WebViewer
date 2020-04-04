@@ -25,16 +25,19 @@ function assertContains(needle, haystack) {
 }
 
 function testSocketReceive(callback) {
+    const server = echoServer.createEchoServer(hostname, port);
     const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
     ws.on('message', function incoming(data) {
         var pageString = data.toString();
         assertContains(echoServer.echoServerConnectMessage, pageString);
         ws.terminate();
+        server.close();
         callback();
     });
 }
 
 function testEcho(callback) {
+    const server = echoServer.createEchoServer(hostname, port);
     const wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
     const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
 
@@ -56,6 +59,7 @@ function testEcho(callback) {
         } else {
             wssub.terminate();
             wspub.terminate();
+            server.close();
             callback();
         }
     });
@@ -63,6 +67,7 @@ function testEcho(callback) {
 
 
 function testParallelReceive(callback) {
+    const server = echoServer.createEchoServer(hostname, port);
     var wssubs = [];
     const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
 
@@ -120,6 +125,7 @@ function testParallelReceive(callback) {
                         ws.terminate();
                     });
                     wspub.terminate();
+                    server.close();
                     callback();
                 }
             }
@@ -134,6 +140,7 @@ function testParallelReceive(callback) {
 
 
 function testIndexPage(callback) {
+    const server = echoServer.createEchoServer(hostname, port);
     const options = {
         hostname: hostname,
         port: port,
@@ -144,6 +151,7 @@ function testIndexPage(callback) {
         res.on('data', data => {
             var pageString = data.toString();
             assertContains("Test page", pageString);
+            server.close();
             callback();
         })
     })
@@ -179,8 +187,6 @@ function runTests(tests) {
     theTest();
 }
 
-
-echoServer.createEchoServer(hostname, port);
 
 runTests(
     [

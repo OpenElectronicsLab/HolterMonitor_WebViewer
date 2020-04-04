@@ -55,7 +55,7 @@ function createEchoServer(hostname, port) {
         console.log(`Node.js server is running on http://${hostname}:${port}/`);
     });
 
-    // return server;
+    return server;
 }
 
 exports.echoServerConnectMessage = echoServerConnectMessage;
