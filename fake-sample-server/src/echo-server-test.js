@@ -97,12 +97,13 @@ function testParallelReceive(callback) {
         }
     };
 
-    function createSocket() {
+    function createWebSocket() {
         var newws = new WebSocket(`ws://${hostname}:${port}/sub`);
         wssubs.push(newws);
         var messages = [];
         newws.on('message', recorderCallback(messages));
         messagesBySocket.push(messages);
+        return newws;
     }
 
     function recorderCallback(messageList) {
@@ -119,8 +120,10 @@ function testParallelReceive(callback) {
                 sendCount++;
                 receiveCount = 0;
                 if (sendCount < expected.length) {
-                    createSocket();
-                    wspub.send(expected[sendCount]);
+                    var socket = createWebSocket();
+                    socket.on("open", function(){
+                        wspub.send(expected[sendCount]);
+                    });
                 } else {
                     assertAllMessagesExpected();
                     wssubs.forEach((ws) => {
@@ -134,9 +137,11 @@ function testParallelReceive(callback) {
         };
     };
 
-    createSocket();
     wspub.on('open', () => {
-        wspub.send(expected[0]);
+        var ws_sub_one = createWebSocket();
+        ws_sub_one.on('open', function() {
+               wspub.send(expected[0]);
+        });
     });
 }
 
@@ -161,6 +166,8 @@ function testIndexPage(callback) {
 }
 
 function runTests(tests) {
+    // console.log(process.versions);
+    // console.log(`WebSocket.version ${WebSocket.version}`);
     assert(Array.isArray(tests));
     var numTestsExpected = tests.length;
     var numTestsCalled = 0;
