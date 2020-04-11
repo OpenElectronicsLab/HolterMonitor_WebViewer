@@ -10,9 +10,9 @@ const DEBUG = ((process.env.DEBUG !== undefined) && (process.env.DEBUG !== "0"))
 var logger = console;
 
 function log_debug(msg) {
-   if (DEBUG) {
-	logger.log(msg);
-   }
+    if (DEBUG) {
+        logger.log(msg);
+    }
 }
 
 log_debug(`DEBUG: ${DEBUG}`);
@@ -20,8 +20,8 @@ log_debug(`DEBUG: ${DEBUG}`);
 function createEchoServer(hostname, port) {
 
     const server = http.createServer(function(req, res) {
-	var filename = __dirname + "/static/" + req.url;
-	log_debug(`serving ${filename}`);
+        var filename = __dirname + "/static/" + req.url;
+        log_debug(`serving ${filename}`);
         fs.readFile(filename, function(err, data) {
             if (err) {
                 res.writeHead(404);
@@ -45,20 +45,20 @@ function createEchoServer(hostname, port) {
         const pathname = request.url;
         if (pathname === '/sub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
-		log_debug(`adding receiver`);
+                log_debug(`adding receiver`);
                 receivers.add(ws);
                 ws.on('close', function clear() {
-		    log_debug(`removing receiver`);
+                    log_debug(`removing receiver`);
                     receivers.delete(ws);
                 });
-		log_debug(`sending echoServerConnectMessage`);
+                log_debug(`sending echoServerConnectMessage`);
                 ws.send(echoServerConnectMessage);
             });
         } else if (pathname == '/pub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
                 ws.on('message', function incoming(data) {
-		    log_debug(`sending to ${receivers.size} receivers`);
-		    log_debug(`   data: ${data}`); // log_trace?
+                    log_debug(`sending to ${receivers.size} receivers`);
+                    log_debug(`   data: ${data}`); // log_trace?
                     receivers.forEach((rws) => {
                         rws.send(data);
                     });

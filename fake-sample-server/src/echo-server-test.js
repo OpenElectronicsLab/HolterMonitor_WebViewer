@@ -121,7 +121,7 @@ function testParallelReceive(callback) {
                 receiveCount = 0;
                 if (sendCount < expected.length) {
                     var socket = createWebSocket();
-                    socket.on("open", function(){
+                    socket.on("open", function() {
                         wspub.send(expected[sendCount]);
                     });
                 } else {
@@ -140,7 +140,7 @@ function testParallelReceive(callback) {
     wspub.on('open', () => {
         var ws_sub_one = createWebSocket();
         ws_sub_one.on('open', function() {
-               wspub.send(expected[0]);
+            wspub.send(expected[0]);
         });
     });
 }
