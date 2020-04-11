@@ -56,16 +56,18 @@ function testEcho(callback) {
             wspub.on('open', function() {
                 wssub.on('message', function(data) {
                     var pageString = data.toString();
-                    assertContains(expected[cnt], pageString);
-                    cnt++;
+                    if (pageString != echoServer.echoServerConnectMessage) {
+                        assertContains(expected[cnt], pageString);
+                        cnt++;
 
-                    if (cnt < expected.length) {
-                        wspub.send(expected[cnt]);
-                    } else {
-                        wssub.terminate();
-                        wspub.terminate();
-                        server.close();
-                        callback();
+                        if (cnt < expected.length) {
+                            wspub.send(expected[cnt]);
+                        } else {
+                            wssub.terminate();
+                            wspub.terminate();
+                            server.close();
+                            callback();
+                        }
                     }
                 });
                 wspub.send(expected[0]);
