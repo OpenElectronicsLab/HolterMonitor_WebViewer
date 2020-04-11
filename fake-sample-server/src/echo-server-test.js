@@ -26,44 +26,51 @@ function assertContains(needle, haystack) {
 
 function testSocketReceive(callback) {
     const server = echoServer.createEchoServer(hostname, port);
-    const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
-    ws.on('message', function incoming(data) {
-        var pageString = data.toString();
-        assertContains(echoServer.echoServerConnectMessage, pageString);
-        ws.terminate();
-        server.close();
-        callback();
+    server.on('listening', function() {
+        const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
+        ws.on('message', function incoming(data) {
+            var pageString = data.toString();
+            assertContains(echoServer.echoServerConnectMessage, pageString);
+            ws.terminate();
+            server.close();
+            callback();
+        });
     });
 }
 
-// this test is fragile and prone to failure due to race conditions
 function testEcho(callback) {
     const server = echoServer.createEchoServer(hostname, port);
-    // the order of creation of wspub and wssub is significant
-    const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
-    const wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
 
     var expected = [
-        echoServer.echoServerConnectMessage,
         "one",
         "two",
     ];
     var cnt = 0;
 
-    wssub.on('message', function incoming(data) {
-        var pageString = data.toString();
-        assertContains(expected[cnt], pageString);
+    var wspub;
+    var wssub;
+    server.on('listening', function() {
+        wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
+        wssub.on('open', function() {
+            wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
+            wspub.on('open', function() {
+                wssub.on('message', function(data) {
+                    var pageString = data.toString();
+                    assertContains(expected[cnt], pageString);
+                    cnt++;
 
-        cnt++;
-
-        if (cnt < expected.length) {
-            wspub.send(expected[cnt]);
-        } else {
-            wssub.terminate();
-            wspub.terminate();
-            server.close();
-            callback();
-        }
+                    if (cnt < expected.length) {
+                        wspub.send(expected[cnt]);
+                    } else {
+                        wssub.terminate();
+                        wspub.terminate();
+                        server.close();
+                        callback();
+                    }
+                });
+                wspub.send(expected[0]);
+            });
+        });
     });
 }
 
@@ -154,15 +161,17 @@ function testIndexPage(callback) {
         path: '/index.html',
         method: 'GET'
     }
-    const req = http.request(options, res => {
-        res.on('data', data => {
-            var pageString = data.toString();
-            assertContains("Test page", pageString);
-            server.close();
-            callback();
-        })
-    })
-    req.end();
+    server.on('listening', function() {
+        const req = http.request(options, res => {
+            res.on('data', data => {
+                var pageString = data.toString();
+                assertContains("Test page", pageString);
+                server.close();
+                callback();
+            });
+        });
+        req.end();
+    });
 }
 
 function runTests(tests) {
