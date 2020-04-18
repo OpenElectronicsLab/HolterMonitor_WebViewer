@@ -70,8 +70,12 @@ function createEchoServer(hostname, port) {
         }
     });
 
+    server.on('close', function() {
+        logger.log(`closing server is running on ${hostname}:${port}`);
+    });
+
     server.listen(port, hostname, () => {
-        logger.log(`Node.js server is running on http://${hostname}:${port}/`);
+        logger.log(`Node.js server is running on ${hostname}:${port}`);
     });
 
     return server;
