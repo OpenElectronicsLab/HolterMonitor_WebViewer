@@ -53,11 +53,13 @@ async function runTests(tests) {
     clearInterval(intervalId);
 }
 
-function promiseOnEvent(obj, eventName) {
+function promisedEvent(obj, eventName) {
     return new Promise((onSuccess, onFailure) => {
-        obj.on(eventName, () => {
-            onSuccess()
-        });
+        async function func(...varargs) {
+            obj.removeListener(eventName, func);
+            onSuccess(varargs);
+        };
+        obj.on(eventName, func);
     });
 }
 
@@ -67,7 +69,7 @@ const testModules = [
 
     async function testIndexPage(onsuccess, onfail) {
         const server = echoServer.createEchoServer(hostname, port);
-        await promiseOnEvent(server, 'listening');
+        await promisedEvent(server, 'listening');
 
         const options = {
             hostname: hostname,
@@ -88,56 +90,50 @@ const testModules = [
 
     async function testSocketReceive(onsuccess, onfailure) {
         const server = echoServer.createEchoServer(hostname, port);
-        await promiseOnEvent(server, 'listening');
+        await promisedEvent(server, 'listening');
 
         const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
-        ws.on('message', function incoming(data) {
-            var pageString = data.toString();
-            assertContains(echoServer.echoServerConnectMessage, pageString);
-            ws.close();
-            server.close(onsuccess);
-        });
+        var message = await promisedEvent(ws, 'message');
+        var pageString = message[0].toString();
+        assertContains(echoServer.echoServerConnectMessage, pageString);
+        ws.close();
+        server.close(onsuccess);
     },
 
     async function testEcho(onsuccess, onfailure) {
         const server = echoServer.createEchoServer(hostname, port);
-        await promiseOnEvent(server, 'listening');
+        await promisedEvent(server, 'listening');
 
         var expected = [
             "one",
             "two",
         ];
-        var cnt = 0;
 
-        var wspub;
-        var wssub;
-        wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
-        wssub.on('open', function() {
-            wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
-            wspub.on('open', function() {
-                wssub.on('message', function(data) {
-                    var pageString = data.toString();
-                    if (pageString != echoServer.echoServerConnectMessage) {
-                        assertContains(expected[cnt], pageString);
-                        cnt++;
+        var wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
+        await promisedEvent(wssub, 'open');
 
-                        if (cnt < expected.length) {
-                            wspub.send(expected[cnt]);
-                        } else {
-                            wssub.close();
-                            wspub.close();
-                            server.close(onsuccess);
-                        }
-                    }
-                });
-                wspub.send(expected[0]);
-            });
-        });
+        var wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
+        // assert echoServer.echoServerConnectMessage in promise?
+        await promisedEvent(wspub, 'open');
+
+        for (var cnt = 0; cnt < expected.length; ++cnt) {
+            var gotData = promisedEvent(wssub, 'message');
+
+            wspub.send(expected[cnt]);
+
+            var data = await gotData;
+            var pageString = data.toString();
+            assertContains(expected[cnt], pageString);
+        }
+
+        wssub.close();
+        wspub.close();
+        server.close(onsuccess);
     },
 
     async function testParallelReceive(onsuccess, onfailure) {
         const server = echoServer.createEchoServer(hostname, port);
-        await promiseOnEvent(server, 'listening');
+        await promisedEvent(server, 'listening');
 
         var wssubs = [];
         const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
