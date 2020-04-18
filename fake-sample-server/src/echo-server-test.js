@@ -24,7 +24,7 @@ function assertContains(needle, haystack) {
     }
 }
 
-function testSocketReceive(callback) {
+function testSocketReceive(onsuccess, onfailure) {
     const server = echoServer.createEchoServer(hostname, port);
     server.on('listening', function() {
         const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
@@ -33,12 +33,12 @@ function testSocketReceive(callback) {
             assertContains(echoServer.echoServerConnectMessage, pageString);
             ws.terminate();
             server.close();
-            callback();
+            onsuccess();
         });
     });
 }
 
-function testEcho(callback) {
+function testEcho(onsuccess, onfailure) {
     const server = echoServer.createEchoServer(hostname, port);
 
     var expected = [
@@ -66,7 +66,7 @@ function testEcho(callback) {
                             wssub.terminate();
                             wspub.terminate();
                             server.close();
-                            callback();
+                            onsuccess();
                         }
                     }
                 });
@@ -77,7 +77,7 @@ function testEcho(callback) {
 }
 
 
-function testParallelReceive(callback) {
+function testParallelReceive(onsuccess, onfailure) {
     const server = echoServer.createEchoServer(hostname, port);
     var wssubs = [];
     const wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
@@ -140,7 +140,7 @@ function testParallelReceive(callback) {
                     });
                     wspub.terminate();
                     server.close();
-                    callback();
+                    onsuccess();
                 }
             }
         };
@@ -155,7 +155,7 @@ function testParallelReceive(callback) {
 }
 
 
-function testIndexPage(callback) {
+function testIndexPage(onsuccess, onfail) {
     const server = echoServer.createEchoServer(hostname, port);
     const options = {
         hostname: hostname,
@@ -169,44 +169,31 @@ function testIndexPage(callback) {
                 var pageString = data.toString();
                 assertContains("Test page", pageString);
                 server.close();
-                callback();
+                onsuccess();
             });
         });
         req.end();
     });
 }
 
-function runTests(tests) {
-    // console.log(process.versions);
-    // console.log(`WebSocket.version ${WebSocket.version}`);
-    assert(Array.isArray(tests));
+async function runTests(tests) {
     var numTestsExpected = tests.length;
     var numTestsCalled = 0;
     var testStartMillis = Date.now();
-    var theTest = function() {
-        console.log(`Ran ${numTestsCalled}/${numTestsExpected} tests`)
-        assertEquals(numTestsExpected, numTestsCalled);
-        var testEndMillis = Date.now();
-        var testTimeMillis = testEndMillis - testStartMillis;
-        console.log(`time: ${testTimeMillis}`);
-        console.log('*** tests pass ***');
-        process.exit(0);
-    };
 
     while (tests.length) {
-        let currentTest = tests.pop();
-        let nextTest = theTest;
-        theTest = function() {
-            console.log('* ' + currentTest.name);
-            ++numTestsCalled;
-            currentTest((test) => {
-                nextTest(test);
-            });
-        }
+        ++numTestsCalled;
+        await tests.pop();
     }
-    theTest();
-}
 
+    console.log(`Ran ${numTestsCalled}/${numTestsExpected} tests`)
+    assertEquals(numTestsExpected, numTestsCalled);
+    var testEndMillis = Date.now();
+    var testTimeMillis = testEndMillis - testStartMillis;
+    console.log(`time: ${testTimeMillis}`);
+    console.log('*** tests pass ***');
+    process.exit(0);
+}
 
 runTests(
     [
