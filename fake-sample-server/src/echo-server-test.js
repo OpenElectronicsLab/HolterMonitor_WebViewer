@@ -57,6 +57,26 @@ async function runTests(tests) {
 
 const testModules = [
 
+    function testIndexPage(onsuccess, onfail) {
+        const server = echoServer.createEchoServer(hostname, port);
+        const options = {
+            hostname: hostname,
+            port: port,
+            path: '/index.html',
+            method: 'GET'
+        }
+        server.on('listening', function() {
+            const req = http.request(options, res => {
+                res.on('data', data => {
+                    var pageString = data.toString();
+                    assertContains("Test page", pageString);
+                    server.close(onsuccess);
+                });
+            });
+            req.end();
+        });
+    },
+
     function testSocketReceive(onsuccess, onfailure) {
         const server = echoServer.createEchoServer(hostname, port);
         server.on('listening', function() {
@@ -180,26 +200,6 @@ const testModules = [
             ws_sub_one.on('open', function() {
                 wspub.send(expected[0]);
             });
-        });
-    },
-
-    function testIndexPage(onsuccess, onfail) {
-        const server = echoServer.createEchoServer(hostname, port);
-        const options = {
-            hostname: hostname,
-            port: port,
-            path: '/index.html',
-            method: 'GET'
-        }
-        server.on('listening', function() {
-            const req = http.request(options, res => {
-                res.on('data', data => {
-                    var pageString = data.toString();
-                    assertContains("Test page", pageString);
-                    server.close(onsuccess);
-                });
-            });
-            req.end();
         });
     },
 ];
