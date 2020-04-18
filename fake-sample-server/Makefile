@@ -4,6 +4,7 @@ SOURCES=src/echo-server.js  src/echo-server-test.js
 NODEJS=node
 
 check: $(SOURCES)
+	$(NODEJS) --version
 	$(NODEJS) src/echo-server-test.js
 
 update:
