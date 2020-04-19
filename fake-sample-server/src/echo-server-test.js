@@ -192,7 +192,8 @@ const testModules = [
         }
 
         function recorderCallback(messageList) {
-            return (data) => {
+            /* enclose the messageList into the callback's scope */
+            async function recorderCallbackClosure(data) {
                 var pageString = data.toString();
                 messageList.push(pageString);
 
@@ -206,9 +207,8 @@ const testModules = [
                     receiveCount = 0;
                     if (sendCount < expected.length) {
                         var socket = createWebSocket();
-                        socket.on("open", function() {
-                            wspub.send(expected[sendCount]);
-                        });
+                        await promisedEvent(socket, 'open');
+                        wspub.send(expected[sendCount]);
                     } else {
                         assertAllMessagesExpected();
                         wssubs.forEach((ws) => {
@@ -219,14 +219,13 @@ const testModules = [
                     }
                 }
             };
+            return recorderCallbackClosure;
         };
 
-        wspub.on('open', () => {
-            var ws_sub_one = createWebSocket();
-            ws_sub_one.on('open', function() {
-                wspub.send(expected[0]);
-            });
-        });
+        await promisedEvent(wspub, 'open');
+        var ws_sub_one = createWebSocket();
+        await promisedEvent(ws_sub_one, 'open');
+        wspub.send(expected[0]);
     },
 ];
 
