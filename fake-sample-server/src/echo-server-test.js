@@ -10,6 +10,23 @@ const hostname = '127.0.0.1';
 const port = 8080;
 const testMaxMillis = (0.5 * 1000); // half second
 
+function logger() {
+    var DEBUG = ((process.env.DEBUG !== undefined) &&
+        (process.env.DEBUG !== "0"));
+
+    var VERBOSE = ((process.env.VERBOSE !== undefined) &&
+        (process.env.VERBOSE !== "0"));
+
+    if (DEBUG || VERBOSE) {
+        return console;
+    } else {
+        return {
+            log: function() {}
+        }
+    };
+}
+
+
 // test infra
 
 function assertEquals(expected, actual) {
@@ -68,7 +85,7 @@ function promisedEvent(obj, eventName) {
 const testModules = [
 
     async function testIndexPage(onsuccess, onfail) {
-        const server = echoServer.createEchoServer(hostname, port);
+        const server = echoServer.createEchoServer(hostname, port, logger());
         await promisedEvent(server, 'listening');
 
         const options = {
@@ -89,7 +106,7 @@ const testModules = [
     },
 
     async function testSocketReceive(onsuccess, onfailure) {
-        const server = echoServer.createEchoServer(hostname, port);
+        const server = echoServer.createEchoServer(hostname, port, logger());
         await promisedEvent(server, 'listening');
 
         const ws = new WebSocket(`ws://${hostname}:${port}/sub`);
@@ -101,7 +118,7 @@ const testModules = [
     },
 
     async function testEcho(onsuccess, onfailure) {
-        const server = echoServer.createEchoServer(hostname, port);
+        const server = echoServer.createEchoServer(hostname, port, logger());
         await promisedEvent(server, 'listening');
 
         var expected = [
@@ -132,7 +149,7 @@ const testModules = [
     },
 
     async function testParallelReceive(onsuccess, onfailure) {
-        const server = echoServer.createEchoServer(hostname, port);
+        const server = echoServer.createEchoServer(hostname, port, logger());
         await promisedEvent(server, 'listening');
 
         var wssubs = [];

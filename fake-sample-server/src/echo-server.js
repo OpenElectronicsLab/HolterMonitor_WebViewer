@@ -7,21 +7,22 @@ var fs = require('fs'),
 const echoServerConnectMessage = 'Hello world';
 const DEBUG = ((process.env.DEBUG !== undefined) && (process.env.DEBUG !== "0"));
 
-var logger = console;
-
-function log_debug(msg) {
+function log_debug(server, msg) {
     if (DEBUG) {
-        logger.log(msg);
+        server.logger.log(msg);
     }
 }
 
-log_debug(`DEBUG: ${DEBUG}`);
+log_debug({
+    logger: console
+}, `DEBUG: ${DEBUG}`);
 
-function createEchoServer(hostname, port) {
+
+function createEchoServer(hostname, port, logger) {
 
     const server = http.createServer(function(req, res) {
         var filename = __dirname + "/static/" + req.url;
-        log_debug(`serving ${filename}`);
+        log_debug(server, `serving ${filename}`);
         fs.readFile(filename, function(err, data) {
             if (err) {
                 res.writeHead(404);
@@ -35,6 +36,12 @@ function createEchoServer(hostname, port) {
         });
     });
 
+    if (typeof logger === 'undefined' || logger === null) {
+        server.logger = console;
+    } else {
+        server.logger = logger;
+    }
+
     const wss1 = new WebSocket.Server({
         noServer: true
     });
@@ -45,37 +52,37 @@ function createEchoServer(hostname, port) {
         const pathname = request.url;
         if (pathname === '/sub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
-                log_debug(`adding receiver`);
+                log_debug(server, `adding receiver`);
                 receivers.add(ws);
                 ws.on('close', function clear() {
-                    log_debug(`removing receiver`);
+                    log_debug(server, `removing receiver`);
                     receivers.delete(ws);
                 });
-                log_debug(`sending echoServerConnectMessage`);
+                log_debug(server, `sending echoServerConnectMessage`);
                 ws.send(echoServerConnectMessage);
             });
         } else if (pathname == '/pub') {
             wss1.handleUpgrade(request, socket, head, function done(ws) {
                 ws.on('message', function incoming(data) {
-                    log_debug(`sending to ${receivers.size} receivers`);
-                    log_debug(`   data: ${data}`); // log_trace?
+                    log_debug(server, `sending to ${receivers.size} receivers`);
+                    log_debug(server, `   data: ${data}`); // log_trace?
                     receivers.forEach((rws) => {
                         rws.send(data);
                     });
                 });
             });
         } else {
-            log_debug(`calling socket.destroy`);
+            log_debug(server, `calling socket.destroy`);
             socket.destroy();
         }
     });
 
     server.on('close', function() {
-        logger.log(`closing server is running on ${hostname}:${port}`);
+        server.logger.log(`closing server is running on ${hostname}:${port}`);
     });
 
     server.listen(port, hostname, () => {
-        logger.log(`Node.js server is running on ${hostname}:${port}`);
+        server.logger.log(`Node.js server is running on ${hostname}:${port}`);
     });
 
     return server;
@@ -83,4 +90,3 @@ function createEchoServer(hostname, port) {
 
 exports.echoServerConnectMessage = echoServerConnectMessage;
 exports.createEchoServer = createEchoServer;
-exports.echoServerLogger = logger;
