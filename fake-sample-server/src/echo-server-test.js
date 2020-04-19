@@ -126,12 +126,15 @@ const testModules = [
             "two",
         ];
 
+        assertEquals(0, server.receivers.size);
         var wssub = new WebSocket(`ws://${hostname}:${port}/sub`);
+        // assert echoServer.echoServerConnectMessage in promise?
         await promisedEvent(wssub, 'open');
+        assertEquals(1, server.receivers.size);
 
         var wspub = new WebSocket(`ws://${hostname}:${port}/pub`);
-        // assert echoServer.echoServerConnectMessage in promise?
         await promisedEvent(wspub, 'open');
+        assertEquals(1, server.receivers.size);
 
         for (var cnt = 0; cnt < expected.length; ++cnt) {
             var gotData = promisedEvent(wssub, 'message');

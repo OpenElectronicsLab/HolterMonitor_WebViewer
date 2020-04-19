@@ -42,31 +42,31 @@ function createEchoServer(hostname, port, logger) {
         server.logger = logger;
     }
 
-    const wss1 = new WebSocket.Server({
+    server.wss1 = new WebSocket.Server({
         noServer: true
     });
 
-    var receivers = new Set();
+    server.receivers = new Set();
 
     server.on('upgrade', function upgrade(request, socket, head) {
         const pathname = request.url;
         if (pathname === '/sub') {
-            wss1.handleUpgrade(request, socket, head, function done(ws) {
+            server.wss1.handleUpgrade(request, socket, head, function done(ws) {
                 log_debug(server, `adding receiver`);
-                receivers.add(ws);
+                server.receivers.add(ws);
                 ws.on('close', function clear() {
                     log_debug(server, `removing receiver`);
-                    receivers.delete(ws);
+                    server.receivers.delete(ws);
                 });
                 log_debug(server, `sending echoServerConnectMessage`);
                 ws.send(echoServerConnectMessage);
             });
         } else if (pathname == '/pub') {
-            wss1.handleUpgrade(request, socket, head, function done(ws) {
+            server.wss1.handleUpgrade(request, socket, head, function done(ws) {
                 ws.on('message', function incoming(data) {
-                    log_debug(server, `sending to ${receivers.size} receivers`);
+                    log_debug(server, `sending to ${server.receivers.size} receivers`);
                     log_debug(server, `   data: ${data}`); // log_trace?
-                    receivers.forEach((rws) => {
+                    server.receivers.forEach((rws) => {
                         rws.send(data);
                     });
                 });
