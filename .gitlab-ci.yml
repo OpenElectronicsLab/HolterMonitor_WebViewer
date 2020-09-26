@@ -1,0 +1,7 @@
+# Official framework image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/node/tags/
+image: node:latest
+
+test_all:
+  script:
+    - make --directory=fake-sample-server check
