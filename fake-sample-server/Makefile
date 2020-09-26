@@ -3,7 +3,12 @@ SOURCES=src/echo-server.js  src/echo-server-test.js
 
 NODEJS=node
 
-check: $(SOURCES)
+default: check
+
+node_modules/ws/lib/websocket-server.js:
+	npm install
+
+check: $(SOURCES) node_modules/ws/lib/websocket-server.js
 	$(NODEJS) --version
 	$(NODEJS) src/echo-server-test.js
 
