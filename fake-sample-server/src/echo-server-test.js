@@ -136,6 +136,10 @@ const testModules = [
         await promisedEvent(wspub, 'open');
         assertEquals(1, server.receivers.size);
 
+        var gotData = promisedEvent(wssub, 'message');
+        var data = await gotData;
+        assertContains(echoServer.echoServerConnectMessage, data.toString());
+
         for (var cnt = 0; cnt < expected.length; ++cnt) {
             var gotData = promisedEvent(wssub, 'message');
 
