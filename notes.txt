@@ -1,3 +1,7 @@
+TODO: read and write ISHNE files?
+http://www.ampsmedical.com/uploads/2017-12-7/The_ISHNE_Format.pdf
+
+# updating node for your local user
 pushd ${HOME}
 wget https://nodejs.org/dist/v12.16.2/node-v12.16.2-linux-x64.tar.xz
 tar xvf node-v12.16.2-linux-x64.tar.xz
@@ -7,7 +11,3 @@ export NODE_PATH=${HOME}/node-v12.16.2-linux-x64
 export PATH=$PATH:${NODE_PATH}/bin
 
 and "npm install"
-
-TODO: read and write ISHNE files?
-http://www.ampsmedical.com/uploads/2017-12-7/The_ISHNE_Format.pdf
-
