@@ -4,7 +4,7 @@ var fs = require('fs'),
     http = require('http'),
     WebSocket = require('ws');
 
-const echoServerConnectMessage = 'Hello world';
+const echoServerConnectMessage = '["Hello world"]';
 const DEBUG = ((process.env.DEBUG !== undefined) && (process.env.DEBUG !== "0"));
 
 function log_debug(server, msg) {
