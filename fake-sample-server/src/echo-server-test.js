@@ -91,7 +91,7 @@ const testModules = [
         const options = {
             hostname: hostname,
             port: port,
-            path: '/index.html',
+            path: '/test-static.html',
             method: 'GET'
         }
 
