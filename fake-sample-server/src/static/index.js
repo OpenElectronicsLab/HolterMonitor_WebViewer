@@ -1,14 +1,19 @@
 //
 "use strict";
 
-var url = new URL(document.URL);
-var hostname = url.hostname;
-var port = url.port;
+var ws;
 
-var ws = new WebSocket(`ws://${hostname}:${port}/sub`);
 var msg_buf_max = 50;
 var msg_buf = [];
-var data_max = 255;
+
+var expected_samples_per_second = 60;
+var seconds_to_retain = 8;
+var data_max = Math.ceil(expected_samples_per_second * seconds_to_retain);
+
+const max_frames_per_second = 15;
+const min_interval = 1000 / max_frames_per_second;
+var last_update_ms = 0;
+
 var chart;
 
 function is_data_message(data) {
@@ -19,17 +24,26 @@ function is_data_message(data) {
     return 0;
 }
 
-ws.onmessage = function(event) {
+function ws_on_message(event) {
     const data = JSON.parse(event.data);
     if (msg_buf.length >= msg_buf_max) {
         msg_buf.pop();
     }
     msg_buf.unshift(data);
 
-    var serverDataElem = document.getElementById("serverData");
-    if (serverDataElem) {
-        var contents = msg_buf.join("<br/>\n");
-        serverDataElem.innerHTML = contents;
+    var do_update = 0;
+    var now_ms = new Date();
+    var elapsed_ms = now_ms - last_update_ms;
+    if (elapsed_ms > min_interval) {
+        do_update = 1;
+    }
+
+    if (do_update) {
+        var serverDataElem = document.getElementById("serverData");
+        if (serverDataElem) {
+            var contents = msg_buf.join("<br/>\n");
+            serverDataElem.innerHTML = contents;
+        }
     }
 
     if (is_data_message(data)) {
@@ -40,7 +54,9 @@ ws.onmessage = function(event) {
             }
             chart.data.datasets[0].data.push(data[1]);
             chart.data.labels.push(data[0]);
-            chart.update();
+            if (do_update) {
+                chart.update();
+            }
         }
     }
 };
@@ -79,4 +95,10 @@ window.addEventListener('load', (event) => {
     var serverDataElem = document.getElementById("serverData");
     var previous = serverDataElem.innerHTML;
     serverDataElem.innerHTML = `ws://${hostname}:${port}/sub<br>${ws}`;
+
+    var url = new URL(document.URL);
+    var hostname = url.hostname;
+    var port = url.port;
+    ws = new WebSocket(`ws://${hostname}:${port}/sub`);
+    ws.onmessage = ws_on_message;
 });
