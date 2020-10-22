@@ -32,8 +32,8 @@ function ws_on_message(event) {
     msg_buf.unshift(data);
 
     var do_update = 0;
-    var now_ms = new Date();
-    var elapsed_ms = now_ms - last_update_ms;
+    const now_ms = new Date().getTime();
+    const elapsed_ms = now_ms - last_update_ms;
     if (elapsed_ms > min_interval) {
         do_update = 1;
     }
@@ -52,8 +52,14 @@ function ws_on_message(event) {
                 chart.data.datasets[0].data.shift();
                 chart.data.labels.shift();
             }
-            chart.data.datasets[0].data.push(data[1]);
-            chart.data.labels.push(data[0]);
+
+            const time_ms = data[1];
+            const date = new Date(time_ms);
+            const label = date.toISOString().substr(11, 11)
+            chart.data.labels.push(label);
+
+            const signal_val = data[2];
+            chart.data.datasets[0].data.push(signal_val);
             if (do_update) {
                 chart.update();
             }

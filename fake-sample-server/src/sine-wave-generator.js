@@ -19,8 +19,10 @@ var ticks_per_cycle = seconds_per_cycle * 1000 / interval_ms;
 setInterval(() => {
     loop_counter++;
     ticks_counter++;
-    var radians = ticks_counter * 2 * Math.PI / ticks_per_cycle;
-    var message = `[${loop_counter},${Math.sin(radians)}]`;
+    const time_ms = new Date().getTime();
+    const radians = ticks_counter * 2 * Math.PI / ticks_per_cycle;
+    const signal_val = Math.sin(radians);
+    const message = `[${loop_counter},${time_ms},${signal_val}]`;
     try {
         wspub.send(message);
     } catch (err) {
