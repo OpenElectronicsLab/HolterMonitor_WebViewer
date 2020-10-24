@@ -6,9 +6,17 @@ var ws;
 var msg_buf_max = 50;
 var msg_buf = [];
 
-var expected_samples_per_second = 60;
-var seconds_to_retain = 8;
-var data_max = Math.ceil(expected_samples_per_second * seconds_to_retain);
+const expected_samples_per_second = 60;
+const seconds_to_retain = 8;
+const data_max = Math.ceil(expected_samples_per_second * seconds_to_retain);
+
+var our_labels = [];
+var our_data = [];
+for (var i = 0; i < data_max; ++i) {
+    our_labels.push("");
+    our_data.push(0);
+}
+
 
 const max_frames_per_second = 15;
 const min_interval = 1000 / max_frames_per_second;
@@ -36,6 +44,7 @@ function ws_on_message(event) {
     const elapsed_ms = now_ms - last_update_ms;
     if (elapsed_ms > min_interval) {
         do_update = 1;
+        last_update_ms = now_ms;
     }
 
     if (do_update) {
@@ -47,45 +56,42 @@ function ws_on_message(event) {
     }
 
     if (is_data_message(data)) {
-        if (chart) {
-            if (chart.data.datasets[0].data.length >= data_max) {
-                chart.data.datasets[0].data.shift();
-                chart.data.labels.shift();
-            }
+        if (our_data.length >= data_max) {
+            our_data.shift();
+            our_labels.shift();
+        }
 
-            const time_ms = data[1];
-            const date = new Date(time_ms);
-            const label = date.toISOString().substr(11, 11)
-            chart.data.labels.push(label);
+        const time_ms = data[1];
+        const date = new Date(time_ms);
+        const label = date.toISOString().substr(11, 11)
+        our_labels.push(label);
 
-            const signal_val = data[2];
-            chart.data.datasets[0].data.push(signal_val);
-            if (do_update) {
-                chart.update();
-            }
+        const signal_val = data[2];
+        our_data.push(signal_val);
+        if (do_update) {
+            update_chart();
         }
     }
 };
 
+function update_chart() {
+    var labels = ["", "", ""];
+    var line_data = [-1, 1, 0];
+
+    chart.data.labels = labels.concat(our_labels);
+    chart.data.datasets[0].data = line_data.concat(our_data);
+    chart.update();
+}
+
 function init_chart() {
-    var labels = [];
-    var line_data = [];
-
-    msg_buf.forEach(function(item, index) {
-        if (is_data_message(ite)) {
-            labels.push(item[0]);
-            line_data.push(item[1]);
-        }
-    });
-
     var chart_context = document.getElementById('dataCanvas').getContext('2d');
     chart = new Chart(chart_context, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: [],
             datasets: [{
                 label: 'The data',
-                data: line_data,
+                data: [],
                 fill: false,
                 borderColor: "rgb(75, 192, 192)",
                 lineTension: 0.1
@@ -93,6 +99,7 @@ function init_chart() {
         },
         options: {}
     });
+    update_chart();
 }
 
 window.addEventListener('load', (event) => {
